@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>人体健康监测系统</title>
+<style>
+  :root{
+    --bg:#0c1524; --bg2:#0f1c2f; --card1:#1a2940; --card2:#152131;
+    --line:#22324b; --line2:#1d2c44;
+    --txt:#eaf2ff; --sub:#8ea6c9; --accent:#4aa8ff; --ok:#25d07a; --danger:#ff4d5e;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;padding:0 12px 22px;min-height:100vh;color:var(--txt);
+    background:radial-gradient(1200px 480px at 50% -120px,#16304f 0%,var(--bg2) 45%,var(--bg) 100%);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+    font-size:14px;line-height:1.45;overflow-x:hidden;
+  }
+
+  /* 顶部封面 */
+  .hero{position:relative;margin:0 -12px 12px;padding:16px 16px 14px;
+    background:#0b1626 url(cover.jpg) center/cover no-repeat;
+    border-radius:0 0 18px 18px;overflow:hidden}
+  .hero:after{content:"";position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(6,14,26,.25) 0%,rgba(8,16,28,.72) 60%,rgba(9,17,30,.92) 100%)}
+  .hero>*{position:relative;z-index:1}
+  .hero .row1{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  h1{margin:0;font-size:19px;font-weight:700;letter-spacing:.6px;
+    text-shadow:0 2px 10px rgba(0,0,0,.55)}
+  .sub{margin-top:5px;font-size:11px;color:#a9c2e2}
+  .pill{display:flex;align-items:center;gap:6px;flex:0 0 auto;
+    padding:5px 9px;border-radius:999px;background:rgba(9,20,36,.72);
+    border:1px solid rgba(96,140,196,.45);font-size:11px;color:#cfe0f6;white-space:nowrap}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--danger)}
+  .dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+
+  /* 报警横幅（加大字号） */
+  .banner{display:none;margin:2px 0 10px;padding:14px 15px;border-radius:14px;
+    background:linear-gradient(90deg,#5a1424,#33131f);border:1px solid #8b2a3d;
+    color:#ffe1e5;font-size:16px;font-weight:700;letter-spacing:.3px;line-height:1.4;
+    box-shadow:0 0 0 1px rgba(255,77,94,.15),0 8px 22px rgba(120,10,30,.35);
+    animation:pulse 1.3s infinite}
+  .banner.clock{background:linear-gradient(90deg,#4a3a12,#2c2410);border-color:#7a6222;
+    color:#ffeab8;animation:none}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.62}}
+
+  /* 指标卡片 */
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .card{background:linear-gradient(180deg,var(--card1),var(--card2));
+    border:1px solid var(--line);border-radius:14px;padding:12px 13px;
+    box-shadow:0 6px 18px rgba(0,0,0,.22)}
+  section.card{margin-top:10px}
+  .k{font-size:11px;color:var(--sub);letter-spacing:.6px}
+  .v{display:flex;align-items:baseline;gap:2px;margin-top:4px;
+    font-size:26px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .v span{font-size:11px;font-weight:500;color:var(--sub)}
+
+  /* 卡片标题 */
+  .card-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+  .card-title>span{font-size:12px;font-weight:600;color:#b9cdea;white-space:nowrap}
+  em{font-style:normal;font-size:10px;font-weight:400;color:var(--sub);margin-left:4px}
+  .chip-btn{flex:0 0 auto;white-space:nowrap;font-size:11px;padding:6px 9px;border-radius:8px;
+    border:1px solid var(--line);background:#1d2f49;color:#cfe2ff}
+  .tag{display:none;font-style:normal;margin-left:6px;padding:1px 6px;border-radius:6px;
+    background:#3a4a12;color:#f0e6a8;border:1px solid #6b6222;font-size:10px}
+
+  /* 坐标 */
+  .coords{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .coord{background:#0f1b2c;border:1px solid var(--line2);border-radius:10px;padding:7px 10px;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .coord b{display:block;margin-bottom:2px;font-size:10px;font-weight:500;color:var(--sub);font-family:inherit}
+
+  /* 地图 */
+  .mapbox{position:relative;aspect-ratio:2/1;border-radius:12px;overflow:hidden;
+    border:1px solid var(--line2);background:#0a1220;display:flex;align-items:center;justify-content:center}
+  .mapbox img{width:100%;height:100%;object-fit:cover;display:none}
+  .ph{padding:0 18px;text-align:center;font-size:11px;line-height:1.7;color:var(--sub)}
+
+  /* 按钮 */
+  .btn{white-space:nowrap;border:1px solid var(--line);background:#1d2f49;color:var(--txt);
+    border-radius:10px;padding:9px 12px;font-size:12px}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:linear-gradient(180deg,#2f7fd8,#205fb3);border-color:#3f8ae0}
+  .wide{width:100%;margin-top:10px;padding:11px 12px;font-size:13px}
+  .btnrow{display:flex;gap:8px;margin-top:10px}
+  .btnrow .btn{flex:1;padding:9px 10px}
+  .actions{display:flex;gap:8px;margin:8px 0 2px}
+  .actions .btn{flex:1;padding:10px 8px;min-width:0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+
+  /* 控制行 */
+  .row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;
+    padding:9px 0;border-top:1px dashed #1f2e46}
+  .row:first-of-type{border-top:none}
+  .name{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ctrl{display:flex;align-items:center;gap:7px;flex:0 0 auto}
+  .ctrl .val{min-width:54px;text-align:right;font-size:14px;font-weight:600;
+    white-space:nowrap;font-variant-numeric:tabular-nums}
+  .ctrl .val u{text-decoration:none;font-size:11px;font-weight:500;color:var(--sub)}
+  .ctrl button{flex:0 0 auto;width:30px;height:30px;padding:0;border-radius:9px;
+    border:1px solid var(--line);background:#1d2f49;color:#dfeaff;font-size:16px;line-height:1}
+  .ctrl button:active{transform:scale(.95)}
+  input[type="time"]{width:104px;flex:0 0 auto;padding:6px 8px;font-size:12px;
+    color:var(--txt);background:#14243a;border:1px solid var(--line);border-radius:9px}
+  select{width:116px;flex:0 0 auto;padding:6px 8px;font-size:12px;
+    color:var(--txt);background:#14243a;border:1px solid var(--line);border-radius:9px}
+
+  .hint{margin-top:6px;font-size:10px;color:#6f86a6;line-height:1.6}
+
+  footer{margin-top:14px;text-align:center;font-size:10px;line-height:1.8;color:#6b7f9f}
+
+  /* 输入弹窗（WebView里不支持系统prompt，用页面内弹窗代替） */
+  .modal{position:fixed;inset:0;z-index:99;display:none;align-items:center;justify-content:center;
+    padding:18px;background:rgba(4,10,20,.72)}
+  .sheet{width:100%;max-width:340px;background:#14243a;border:1px solid var(--line);
+    border-radius:16px;padding:16px;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+  .sheet h3{margin:0 0 10px;font-size:15px;font-weight:600}
+  .flab{display:block;margin:8px 0 4px;font-size:11px;color:var(--sub)}
+  .finput{width:100%;padding:9px 10px;font-size:13px;color:var(--txt);
+    background:#0d1a2b;border:1px solid var(--line);border-radius:10px}
+  .mActions{display:flex;gap:10px;margin-top:14px}
+  .mActions .btn{flex:1;padding:10px 12px}
+
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+    padding:8px 13px;border-radius:10px;font-size:12px;opacity:0;transition:.25s;
+    background:#123a2a;border:1px solid #1e6a49;color:#b8ffd9;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1}
+
+  @media (max-width:360px){
+    .v{font-size:22px}
+    .coord{font-size:11px}
+    .ctrl .val{min-width:48px;font-size:13px}
+    input[type="time"]{width:96px}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="row1">
+    <div>
+      <h1>人体健康监测系统</h1>
+      <div class="sub" id="uptime">等待数据…</div>
+    </div>
+    <div class="pill"><span class="dot" id="dot"></span><span id="state">设备离线</span></div>
+  </div>
+</header>
+
+<div class="banner" id="banner"></div>
+<div class="banner clock" id="clockb"></div>
+
+<div class="metrics">
+  <div class="card"><div class="k">步数</div><div class="v" id="step">--<span>步</span></div></div>
+  <div class="card"><div class="k">体温</div><div class="v" id="temp">--<span>℃</span></div></div>
+  <div class="card"><div class="k">心率</div><div class="v" id="hr">--<span>bpm</span></div></div>
+  <div class="card"><div class="k">血氧</div><div class="v" id="spo2">--<span>%</span></div></div>
+</div>
+
+<section class="card">
+  <div class="card-title">
+    <span>当前位置 <em>ATGM336H</em><i class="tag" id="locTag">演示</i></span>
+    <button class="chip-btn" id="btnKey">更换地图Key</button>
+  </div>
+  <div class="coords">
+    <div class="coord"><b>经度</b><span id="lon">--</span></div>
+    <div class="coord"><b>纬度</b><span id="lat">--</span></div>
+  </div>
+  <div class="mapbox" id="mapbox">
+    <img id="mapimg" alt="位置地图">
+    <div class="ph" id="mapph">装置尚未定位<br>请移到室外或窗边（天线朝上），冷启动约需 30 秒~2 分钟<br>室内演示可点“演示定位”手动指定坐标</div>
+  </div>
+  <div class="btnrow">
+    <button class="btn" id="btnRefresh">刷新定位</button>
+    <button class="btn" id="btnDemo">演示定位</button>
+  </div>
+  <button class="btn primary wide" id="btnMap">在高德地图中打开</button>
+  <div class="hint" id="locHint">定位由装置上的 ATGM336H 采集，室内通常搜不到星，属正常现象。</div>
+</section>
+
+<section class="card">
+  <div class="card-title"><span>阈值与控制</span></div>
+
+  <div class="row"><span class="name">体温报警阈值</span>
+    <div class="ctrl"><span class="val" id="vTempTh">--</span>
+      <button data-cmd="TEMP_SUB">−</button><button data-cmd="TEMP_ADD">+</button></div></div>
+
+  <div class="row" style="border-bottom:none;padding-bottom:4px"><span class="name">久坐提醒</span>
+    <div class="ctrl"><span class="val" id="vSed">--</span>
+      <button data-cmd="SED_SUB">−</button><button data-cmd="SED_ADD">+</button></div></div>
+  <div class="chips">
+    <button class="chip-btn" data-sed="10">10秒</button>
+    <button class="chip-btn" data-sed="30">30秒</button>
+    <button class="chip-btn" data-sed="60">1分钟</button>
+    <button class="chip-btn" data-sed="300">5分钟</button>
+    <button class="chip-btn" data-sed="1800">30分钟</button>
+  </div>
+
+  <div class="row"><span class="name">心率上限</span>
+    <div class="ctrl"><span class="val" id="vHrUp">--</span>
+      <button data-cmd="HR_UP_SUB">−</button><button data-cmd="HR_UP_ADD">+</button></div></div>
+
+  <div class="row"><span class="name">心率下限</span>
+    <div class="ctrl"><span class="val" id="vHrLow">--</span>
+      <button data-cmd="HR_LOW_SUB">−</button><button data-cmd="HR_LOW_ADD">+</button></div></div>
+
+  <div class="row"><span class="name">血氧上限</span>
+    <div class="ctrl"><span class="val" id="vSpUp">--</span>
+      <button data-cmd="SPO2_UP_SUB">−</button><button data-cmd="SPO2_UP_ADD">+</button></div></div>
+
+  <div class="row"><span class="name">血氧下限</span>
+    <div class="ctrl"><span class="val" id="vSpLow">--</span>
+      <button data-cmd="SPO2_LOW_SUB">−</button><button data-cmd="SPO2_LOW_ADD">+</button></div></div>
+
+  <div class="row"><span class="name">装置屏幕</span>
+    <div class="ctrl">
+      <select id="pageSel">
+        <option value="0">主界面</option>
+        <option value="1">心率/血氧</option>
+        <option value="2">经纬度</option>
+        <option value="3">时间/闹钟</option>
+        <option value="4">阈值设置</option>
+      </select>
+    </div></div>
+
+  <div class="row"><span class="name">闹钟时间</span>
+    <div class="ctrl"><input id="alarm" type="time" value="07:30"></div></div>
+
+  <div class="actions">
+    <button class="btn" id="btnTime">同步日期时间</button>
+    <button class="btn" id="btnAlarm">设置闹钟</button>
+  </div>
+  <div class="hint">“同步日期时间”会把手机的年月日+时分秒一起写给装置；闹钟需装置在线才会同步，装置收到时会短鸣一声。</div>
+
+  <div class="actions" style="margin-top:10px">
+    <button class="btn" data-cmd="REST_ALL">恢复出厂阈值</button>
+  </div>
+</section>
+
+<footer>
+  数据经 ESP8266 → 巴法云中转，2 秒刷新一次<br>
+  坐标为 ATGM336H 采集（WGS-84），地图已转换为高德坐标
+</footer>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <h3 id="mTitle">输入</h3>
+    <div id="mBody"></div>
+    <div class="mActions">
+      <button class="btn" id="mCancel">取消</button>
+      <button class="btn primary" id="mOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var UID = "YOUR_BEMFA_UID";      /* 替换为你自己的巴法云 uid */
+  var TOPIC = "YOUR_TOPIC";        /* 替换为你自己的巴法云主题 */
+  var TYPE = 3;
+  var API_GET = "https://apis.bemfa.com/va/getmsg?uid="+UID+"&topic="+TOPIC+"&type="+TYPE+"&num=1";
+  var API_SEND = function(m){ return "https://apis.bemfa.com/va/sendMessage?uid="+UID+"&topic="+TOPIC+"&type="+TYPE+"&msg="+encodeURIComponent(m); };
+
+  var d = {step:0,hr:0,spo2:0,temp:0,sd:0,sedAlarm:0,tempTh:38,sed:1800,hrUp:200,hrLow:30,spUp:99,spLow:90,lon:0,lat:0,unix:0};
+  /* 高德「Web服务」Key：留空时界面会提示填写，也可在“更换地图Key”里设置 */
+  var key = localStorage.getItem("amapKey") || "YOUR_AMAP_KEY";
+  var alarmTime = localStorage.getItem("alarmTime") || "07:30";
+
+  /* 演示定位（室内无GPS时用）：保存一组手动坐标，仅用于界面演示 */
+  var demo = null;
+  (function(){
+    var s = localStorage.getItem("demoPos");
+    if(s){ var p = s.split(","); var a = parseFloat(p[0]), b = parseFloat(p[1]);
+      if(!isNaN(a) && !isNaN(b)) demo = [a, b]; }
+  })();
+
+  var lastMapUrl = "", lastMapAt = 0;     /* 地图限流：坐标没变就60秒才刷新一次 */
+  var lastAlarmKey = "", lastBeepAt = 0;  /* 报警横幅变化时响铃，持续期间每8秒重复 */
+  var clockFired = "";                    /* 闹钟每分钟只响一次 */
+  var holdUntil = 0;                      /* 指令发出后短暂保持界面值，避免云端旧数据覆盖 */
+  var queue = [], busy = false;
+  var lastOnline = false;                 /* 上一次是否在线，用于检测“离线→在线” */
+  var lastSyncAt = 0;                     /* 上次给装置对时的时间 */
+
+  function $(id){ return document.getElementById(id); }
+  function toast(msg, ok){
+    var t = $("toast"); t.textContent = msg;
+    t.style.background = ok ? "#123a2a" : "#3a1820";
+    t.style.borderColor = ok ? "#1e6a49" : "#6d2433";
+    t.style.color = ok ? "#b8ffd9" : "#ffd7dc";
+    t.classList.add("show"); setTimeout(function(){ t.classList.remove("show"); }, 1800);
+  }
+  function num(v){ return (v===undefined||v===null||isNaN(v)) ? 0 : v; }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function beep(){ try{ if(window.Android && Android.beep) Android.beep(); }catch(e){} }
+  function vibrate(){ try{ if(window.Android && Android.vibrate) Android.vibrate(); }catch(e){} }
+
+  /* WGS-84 -> GCJ-02（高德/腾讯用的火星坐标），不转换会有几百米偏移 */
+  function outOfChina(lng,lat){ return !(lng>73.66 && lng<135.05 && lat>3.86 && lat<53.55); }
+  function transformLat(lng,lat){
+    var ret = -100+2*lng+3*lat+0.2*lat*lat+0.1*lng*lat+0.2*Math.sqrt(Math.abs(lng));
+    ret += (20*Math.sin(6*lng*Math.PI)+20*Math.sin(2*lng*Math.PI))*2/3;
+    ret += (20*Math.sin(lat*Math.PI)+40*Math.sin(lat/3*Math.PI))*2/3;
+    ret += (160*Math.sin(lat/12*Math.PI)+320*Math.sin(lat*Math.PI/30))*2/3;
+    return ret;
+  }
+  function transformLng(lng,lat){
+    var ret = 300+lng+2*lat+0.1*lng*lng+0.1*lng*lat+0.1*Math.sqrt(Math.abs(lng));
+    ret += (20*Math.sin(6*lng*Math.PI)+20*Math.sin(2*lng*Math.PI))*2/3;
+    ret += (20*Math.sin(lng*Math.PI)+40*Math.sin(lng/3*Math.PI))*2/3;
+    ret += (150*Math.sin(lng/12*Math.PI)+300*Math.sin(lng/30*Math.PI))*2/3;
+    return ret;
+  }
+  function wgs2gcj(lng,lat){
+    if(outOfChina(lng,lat)) return [lng,lat];
+    var a=6378245.0, ee=0.00669342162296594323;
+    var dLat = transformLat(lng-105.0, lat-35.0);
+    var dLng = transformLng(lng-105.0, lat-35.0);
+    var radLat = lat/180.0*Math.PI;
+    var magic = Math.sin(radLat); magic = 1 - ee*magic*magic;
+    var sqrtMagic = Math.sqrt(magic);
+    dLat = (dLat*180.0)/((a*(1-ee))/(magic*sqrtMagic)*Math.PI);
+    dLng = (dLng*180.0)/(a/sqrtMagic*Math.cos(radLat)*Math.PI);
+    return [lng+dLng, lat+dLat];
+  }
+
+  function render(){
+    $("step").innerHTML = d.step + "<span>步</span>";
+    $("temp").innerHTML = (d.temp>0 ? d.temp.toFixed(1) : "--") + "<span>℃</span>";
+    $("hr").innerHTML = (d.hr>0?d.hr:"--") + "<span>bpm</span>";
+    $("spo2").innerHTML = (d.spo2>0?d.spo2:"--") + "<span>%</span>";
+    $("vTempTh").innerHTML = d.tempTh + "<u>℃</u>";
+    $("vSed").innerHTML = (d.sed < 60) ? (d.sed + "<u>秒</u>") : (Math.round(d.sed/60) + "<u>分钟</u>");
+    $("vHrUp").textContent = d.hrUp;
+    $("vHrLow").textContent = d.hrLow;
+    $("vSpUp").textContent = d.spUp;
+    $("vSpLow").textContent = d.spLow;
+
+    var alarm = [];
+    if(d.sd == 1) alarm.push("检测到跌倒");
+    if(d.sedAlarm == 1) alarm.push("久坐提醒：请起身活动");
+    if(d.temp >= d.tempTh) alarm.push("体温过高 " + d.temp.toFixed(1) + "℃");
+    if(d.hr > 0 && d.spo2 > 0){
+      if(d.hr > d.hrUp)       alarm.push("心率过高 " + d.hr + " bpm");
+      else if(d.hr < d.hrLow) alarm.push("心率过低 " + d.hr + " bpm");
+      if(d.spo2 > d.spUp)       alarm.push("血氧过高 " + d.spo2 + "%");
+      else if(d.spo2 < d.spLow) alarm.push("血氧过低 " + d.spo2 + "%");
+    }
+    var b = $("banner"), keyNow = alarm.join("|");
+    if(alarm.length){
+      b.style.display = "block";
+      b.textContent = "⚠ " + alarm.join("，");
+      var nowMs = Date.now();
+      if(keyNow !== lastAlarmKey || (nowMs - lastBeepAt) > 8000){
+        lastAlarmKey = keyNow; lastBeepAt = nowMs;
+        beep(); vibrate();
+      }
+    } else {
+      b.style.display = "none";
+      lastAlarmKey = "";
+    }
+
+    var lonUse = demo ? demo[0] : d.lon;
+    var latUse = demo ? demo[1] : d.lat;
+    $("locTag").style.display = demo ? "inline-block" : "none";
+
+    if(lonUse && latUse){
+      $("lon").textContent = lonUse.toFixed(6) + " E";
+      $("lat").textContent = latUse.toFixed(6) + " N";
+      var g = wgs2gcj(lonUse, latUse);
+      if(key){
+        $("mapimg").style.display = "block";
+        $("mapph").style.display = "none";
+        var mapUrl = "https://restapi.amap.com/v3/staticmap?location="+g[0].toFixed(6)+","+g[1].toFixed(6)+
+          "&zoom=15&size=600*300&scale=2&markers=mid,,A:"+g[0].toFixed(6)+","+g[1].toFixed(6)+"&key="+key;
+        var nowMs2 = Date.now();
+        if(mapUrl !== lastMapUrl || (nowMs2 - lastMapAt) > 60000){
+          lastMapUrl = mapUrl; lastMapAt = nowMs2;
+          $("mapimg").src = mapUrl + "&t=" + nowMs2;
+        }
+      } else {
+        $("mapimg").style.display="none"; $("mapph").style.display="block";
+      }
+    } else {
+      $("lon").textContent = "未定位"; $("lat").textContent = "未定位";
+      $("mapimg").style.display="none"; $("mapph").style.display="block";
+    }
+
+    /* 在线判定用云端消息时间：装置每秒上传一次，超过10秒没新数据就是离线 */
+    var online = d.unix && (Date.now()/1000 - d.unix < 10);
+    $("dot").className = "dot" + (online ? " on" : "");
+    $("state").textContent = online ? "在线" : "设备离线";
+    $("uptime").textContent = d.unix
+      ? ("数据时间 " + new Date(d.unix*1000).toLocaleTimeString('zh-CN',{hour12:false}))
+      : "等待数据…";
+  }
+
+  function poll(){
+    var ac = new AbortController();
+    var timer = setTimeout(function(){ ac.abort(); }, 5000);
+    fetch(API_GET,{cache:"no-store",signal:ac.signal})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        clearTimeout(timer);
+        if(!j || j.code!==0 || !j.data || !j.data.length) return;
+        d.unix = num(parseInt(j.data[0].unix, 10));
+        var msg = j.data[0].msg || "";
+        var f = msg.split("#");
+        if(f.length >= 14){
+          d.step = num(parseInt(f[1],10));
+          d.hr = num(parseInt(f[2],10));
+          d.spo2 = num(parseInt(f[3],10));
+          d.temp = num(parseFloat(f[4]));
+          d.sd = num(parseInt(f[5],10));
+          if(Date.now() > holdUntil){          /* 刚点过按钮时先保持本地值，避免回跳 */
+            d.tempTh = num(parseInt(f[6],10));
+            d.sed = num(parseInt(f[7],10));
+            d.hrUp = num(parseInt(f[8],10));
+            d.hrLow = num(parseInt(f[9],10));
+            d.spUp = num(parseInt(f[10],10));
+            d.spLow = num(parseInt(f[11],10));
+          }
+          d.lon = num(parseFloat(f[12]));
+          d.lat = num(parseFloat(f[13]));
+          d.sedAlarm = (f.length >= 15) ? num(parseInt(f[14],10)) : 0;   /* 久坐提醒标志 */
+        }
+        render();
+        /* 给装置对时：只要刚恢复在线，或距上次对时超过5分钟，就再对一次。
+           装置每次重新上电/烧录后 RTC 是旧的，只在APP启动时对一次会一直不对 */
+        var onlineNow = d.unix && (Date.now()/1000 - d.unix < 10);
+        if(onlineNow && (!lastOnline || Date.now() - lastSyncAt > 300000)){
+          lastSyncAt = Date.now();
+          sendTime();
+          /* 残留的演示坐标，联机后补发一次，保证OLED与APP一致 */
+          if(demo) fetch(API_SEND("POS " + demo[0] + "," + demo[1]), {cache:"no-store"}).catch(function(){});
+        }
+        lastOnline = onlineNow;
+      })
+      .catch(function(){ clearTimeout(timer); render(); });
+  }
+
+  function pad2(v){ return ("0"+v).slice(-2); }
+  function sendTime(){
+    /* 直接下发Unix时间戳，装置写RTC计数器，不经过年月日换算，避免算错日期 */
+    fetch(API_SEND("TS " + Math.floor(Date.now()/1000)),{cache:"no-store"}).catch(function(){});
+  }
+
+  /* 指令队列：一次一条，间隔 350ms，保证连点不会把消息挤掉 */
+  var OPT = {
+    TEMP_ADD:function(){ d.tempTh = clamp(d.tempTh+1,20,60); },
+    TEMP_SUB:function(){ d.tempTh = clamp(d.tempTh-1,20,60); },
+    SED_ADD:function(){ d.sed = clamp(d.sed + (d.sed < 120 ? 10 : 60), 10, 7200); },
+    SED_SUB:function(){ d.sed = clamp(d.sed - (d.sed > 120 ? 60 : 10), 10, 7200); },
+    HR_UP_ADD:function(){ d.hrUp = clamp(d.hrUp+5,60,250); },
+    HR_UP_SUB:function(){ d.hrUp = clamp(d.hrUp-5,60,250); },
+    HR_LOW_ADD:function(){ d.hrLow = clamp(d.hrLow+5,20,120); },
+    HR_LOW_SUB:function(){ d.hrLow = clamp(d.hrLow-5,20,120); },
+    SPO2_UP_ADD:function(){ d.spUp = clamp(d.spUp+1,80,100); },
+    SPO2_UP_SUB:function(){ d.spUp = clamp(d.spUp-1,80,100); },
+    SPO2_LOW_ADD:function(){ d.spLow = clamp(d.spLow+1,50,99); },
+    SPO2_LOW_SUB:function(){ d.spLow = clamp(d.spLow-1,50,99); },
+    REST_ALL:function(){ d.tempTh=38; d.sed=1800; d.hrUp=200; d.hrLow=30; d.spUp=99; d.spLow=90; }
+  };
+
+  function enqueue(cmd){
+    queue.push(cmd);
+    holdUntil = Date.now() + 2600;
+    if(!busy) pump();
+  }
+  function pump(){
+    if(!queue.length){ busy = false; return; }
+    busy = true;
+    var cmd = queue.shift();
+    if(OPT[cmd]) OPT[cmd]();
+    render();
+    fetch(API_SEND(cmd),{cache:"no-store"})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(j && j.code !== 0){ toast("指令未送达：" + (j.message || j.code), false); }
+      })
+      .catch(function(){ toast("网络异常，指令可能未送达", false); })
+      .then(function(){ setTimeout(pump, 350); });
+  }
+
+  document.addEventListener("click", function(ev){
+    var btn = ev.target.closest ? ev.target.closest("button[data-cmd]") : null;
+    if(btn){ enqueue(btn.getAttribute("data-cmd")); return; }
+
+    /* 久坐快捷值：直接下发 SED 秒数，演示用可一键设为10秒 */
+    var sbtn = ev.target.closest ? ev.target.closest("button[data-sed]") : null;
+    if(sbtn){
+      var s = parseInt(sbtn.getAttribute("data-sed"), 10);
+      if(!isNaN(s)){
+        d.sed = s;
+        holdUntil = Date.now() + 2600;
+        render();
+        enqueue("SED " + s);
+        toast("久坐阈值已设为 " + (s < 60 ? (s + "秒") : (Math.round(s/60) + "分钟")), true);
+      }
+    }
+  });
+
+  /* 页面内输入弹窗（WebView 不支持系统 prompt） */
+  var modalOk = null;
+  function showModal(title, items, onOk){
+    $("mTitle").textContent = title;
+    var body = $("mBody"); body.innerHTML = "";
+    for(var i = 0; i < items.length; i++){
+      var it = items[i];
+      var lab = document.createElement("label");
+      lab.className = "flab"; lab.textContent = it.label;
+      var inp = document.createElement("input");
+      inp.className = "finput"; inp.type = "text"; inp.id = "mi" + i;
+      inp.value = it.value || ""; inp.placeholder = it.placeholder || "";
+      if(it.decimal) inp.setAttribute("inputmode", "decimal");
+      body.appendChild(lab); body.appendChild(inp);
+    }
+    modalOk = function(){
+      var vals = [];
+      for(var k = 0; k < items.length; k++) vals.push($("mi" + k).value.trim());
+      $("modal").style.display = "none";
+      if(onOk) onOk(vals);
+    };
+    $("modal").style.display = "flex";
+  }
+  $("mCancel").addEventListener("click", function(){ $("modal").style.display = "none"; });
+  $("mOk").addEventListener("click", function(){ if(modalOk) modalOk(); });
+
+  $("btnKey").addEventListener("click", function(){
+    showModal("设置地图Key", [{label:"高德「Web服务」Key", value:key, placeholder:"32位字母数字"}], function(v){
+      var nv = v[0];
+      if(!nv){ toast("Key 不能为空", false); return; }
+      key = nv; localStorage.setItem("amapKey", key); lastMapUrl = ""; render();
+      toast("地图Key已保存", true);
+    });
+  });
+
+  $("btnMap").addEventListener("click", function(){
+    var lonUse = demo ? demo[0] : d.lon, latUse = demo ? demo[1] : d.lat;
+    if(!lonUse || !latUse){ toast("还没有定位数据", false); return; }
+    var g = wgs2gcj(lonUse, latUse);
+    window.open("https://uri.amap.com/marker?position="+g[0].toFixed(6)+","+g[1].toFixed(6)+"&name=设备位置", "_blank");
+  });
+
+  /* 主动刷新定位：立即读取云端最新一条数据 */
+  $("btnRefresh").addEventListener("click", function(){
+    toast("正在读取定位…", true);
+    poll();
+    setTimeout(function(){
+      if(demo){ toast("当前显示的是演示坐标", true); return; }
+      if(d.lon && d.lat) toast("已定位：" + d.lon.toFixed(5) + "E / " + d.lat.toFixed(5) + "N", true);
+      else toast("装置尚未定位，请移到室外或窗边", false);
+    }, 900);
+  });
+
+  /* 演示定位：手动输入坐标，供室内答辩演示地图（两项都留空=清除） */
+  $("btnDemo").addEventListener("click", function(){
+    showModal("演示定位（手动坐标）", [
+      {label:"经度（东经为正，例如 110.2415）", value: demo ? demo[0] : "", placeholder:"110.2415", decimal:true},
+      {label:"纬度（北纬为正，例如 21.1763）", value: demo ? demo[1] : "", placeholder:"21.1763", decimal:true}
+    ], function(v){
+      var a = v[0], b = v[1];
+      if(!a && !b){
+        demo = null; localStorage.removeItem("demoPos"); lastMapUrl = ""; render();
+        enqueue("POS 0");                 /* 让装置也退出演示定位 */
+        toast("已清除演示定位", true); return;
+      }
+      var lonv = parseFloat(a), latv = parseFloat(b);
+      if(isNaN(lonv) || isNaN(latv)){ toast("坐标格式不对，应为数字", false); return; }
+      demo = [lonv, latv];
+      localStorage.setItem("demoPos", lonv + "," + latv);
+      lastMapUrl = ""; render();
+      enqueue("POS " + lonv + "," + latv);   /* 同步给装置，OLED也显示该坐标 */
+      toast("已应用演示坐标，并同步到装置屏幕", true);
+    });
+  });
+
+  /* 远程切换装置屏幕 */
+  $("pageSel").addEventListener("change", function(){
+    var v = this.value;
+    var names = ["主界面","心率/血氧","经纬度","时间/闹钟","阈值设置"];
+    enqueue("PAGE " + v);
+    toast("已切换装置屏幕：" + names[v], true);
+  });
+
+  /* 手动对时：把手机当前日期+时间下发给装置RTC */
+  $("btnTime").addEventListener("click", function(){
+    sendTime();
+    var n = new Date();
+    var s = n.getFullYear()+"-"+pad2(n.getMonth()+1)+"-"+pad2(n.getDate())+" "+
+            pad2(n.getHours())+":"+pad2(n.getMinutes())+":"+pad2(n.getSeconds());
+    toast("已下发对时：" + s, true);
+  });
+
+  $("btnAlarm").addEventListener("click", function(){
+    var t = $("alarm").value || alarmTime;
+    alarmTime = t; localStorage.setItem("alarmTime", t);
+    var p = t.split(":");
+    var hhmm = ("0"+p[0]).slice(-2) + ("0"+p[1]).slice(-2);
+    enqueue(hhmm + "ks");
+    toast("闹钟已设为 " + t + "，装置在线时同步", true);
+  });
+
+  $("alarm").value = alarmTime;
+
+  /* 本地闹钟：到点响铃+震动（装置端也会响，双保险） */
+  setInterval(function(){
+    var now = new Date();
+    var hh = ("0"+now.getHours()).slice(-2);
+    var mm = ("0"+now.getMinutes()).slice(-2);
+    var stamp = hh + ":" + mm;
+    if(stamp === alarmTime && now.getSeconds() < 2 && clockFired !== stamp){
+      clockFired = stamp;
+      var c = $("clockb");
+      c.style.display = "block";
+      c.textContent = "⏰ 闹钟 " + stamp + " 时间到";
+      beep(); vibrate();
+      setTimeout(function(){ c.style.display = "none"; }, 30000);
+    }
+    if(now.getSeconds() === 0) clockFired = "";   /* 下一分钟可再次触发 */
+  }, 1000);
+
+  poll();
+  setInterval(poll, 2000);
+})();
+</script>
+</body>
+</html>

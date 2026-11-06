@@ -1,0 +1,33 @@
+# Keil 编译产物
+Objects/
+Listings/
+build.log
+*.uvguix.*
+*.uvoptx
+*.scvd
+*.hex
+*.axf
+*.map
+*.crf
+*.o
+*.d
+*.dep
+*.lnp
+*.lst
+*.htm
+
+# 私有配置（不要提交）
+User/secrets.h
+APP/assets/config.js
+*.keystore
+*.jks
+
+# 系统文件
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# 压缩包
+*.zip
+*.rar
+*.7z
