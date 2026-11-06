@@ -12,7 +12,7 @@
 
 **APP 监测看板 / 阈值与控制**
 
-<img src="docs/images/app-dashboard.jpg" width="300"> <img src="docs/images/app-controls.jpg" width="300">
+<img src="docs/images/app-dashboard.png" width="300"> <img src="docs/images/app-controls.jpg" width="300">
 
 ---
 
