@@ -4,6 +4,16 @@
 
 > 本科毕业设计项目。硬件基于通用模块，软件在开源工程基础上做了大量二次开发。
 
+## 预览
+
+**装置实物（面包板验证阶段）**
+
+![装置实物](docs/images/device-breadboard.jpg)
+
+**APP 监测看板 / 阈值与控制**
+
+<img src="docs/images/app-dashboard.jpg" width="300"> <img src="docs/images/app-controls.jpg" width="300">
+
 ---
 
 ## 功能
